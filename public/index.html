@@ -1,0 +1,1091 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="theme-color" content="#101B27" />
+<title>Setout — daily focus sheet</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' fill='%23101B27'/><rect x='18' y='18' width='64' height='64' fill='none' stroke='%23fff' stroke-width='7'/><rect x='18' y='18' width='64' height='16' fill='%231E45C8'/></svg>" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --fSans:Aptos,'Segoe UI Variable Text','Segoe UI','IBM Plex Sans',system-ui,-apple-system,sans-serif;
+  --fDisp:'Aptos Narrow','Aptos Display',Aptos,'Barlow Condensed','Segoe UI Semibold','Segoe UI',sans-serif;
+  --fMono:'Aptos Mono','IBM Plex Mono',ui-monospace,'Cascadia Mono',Consolas,monospace;
+  --paper:#EDEFF2; --sheet:#FFFFFF; --ink:#111C29; --graphite:#5C6A78; --mute:#8B98A5;
+  --rule:#D3D9DF; --ruleSoft:#E8ECEF; --fill:#F2F5F7; --fillHi:#E5EAEE;
+  --cobalt:#1E45C8; --crimson:#C4123C; --teal:#0B6E62;
+  --r:3px;
+  --sh:0 1px 2px rgba(17,28,41,.05);
+  --shHi:0 2px 8px rgba(17,28,41,.09);
+  --shUp:0 12px 40px rgba(17,28,41,.20);
+}
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;}
+body{
+  background-color:var(--paper);
+  background-image:
+    linear-gradient(rgba(17,28,41,.020) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(17,28,41,.020) 1px, transparent 1px);
+  background-size:32px 32px;
+  color:var(--ink);
+  font-family:var(--fSans);
+  min-height:100vh; -webkit-font-smoothing:antialiased; overscroll-behavior-y:contain;
+}
+::selection{background:rgba(30,69,200,.16);}
+.so-wrap{max-width:1040px;margin:0 auto;padding:0 14px calc(104px + env(safe-area-inset-bottom));}
+
+/* ---------- title block ---------- */
+.so-block{background:var(--sheet);border:1px solid var(--rule);border-top:3px solid var(--ink);
+  border-radius:var(--r);box-shadow:var(--sh);overflow:hidden;margin-top:16px;}
+.so-blockrow{display:flex;align-items:flex-end;justify-content:space-between;gap:14px;padding:15px 16px 13px;flex-wrap:wrap;}
+.so-name{font-family:var(--fDisp);font-weight:700;font-size:29px;letter-spacing:.18em;
+  line-height:.9;text-transform:uppercase;}
+.so-sub{font-family:var(--fMono);font-size:9.5px;letter-spacing:.18em;text-transform:uppercase;
+  color:var(--mute);margin-top:7px;}
+.so-meta{display:flex;gap:22px;align-items:flex-end;}
+.so-field{text-align:right;}
+.so-flabel{font-family:var(--fMono);font-size:8.5px;letter-spacing:.2em;text-transform:uppercase;color:var(--mute);}
+.so-fval{font-family:var(--fDisp);font-weight:600;font-size:22px;letter-spacing:.07em;
+  text-transform:uppercase;line-height:1.1;margin-top:2px;}
+.so-over{color:var(--crimson);}
+
+/* ---------- tabs ---------- */
+.so-tabs{display:flex;border-top:1px solid var(--ruleSoft);background:#FAFBFC;}
+.so-tab{flex:1 1 0;min-width:0;padding:12px 8px;background:transparent;border:0;border-right:1px solid var(--ruleSoft);
+  font-family:var(--fDisp);font-weight:600;font-size:15.5px;letter-spacing:.15em;text-transform:uppercase;
+  color:var(--mute);cursor:pointer;position:relative;white-space:nowrap;transition:color .15s,background .15s;}
+.so-tab:last-child{border-right:0;}
+@media(hover:hover){.so-tab:hover{color:var(--graphite);background:#F3F5F7;}}
+.so-tab[data-on="1"]{color:var(--ink);background:var(--sheet);}
+.so-tab[data-on="1"]::after{content:"";position:absolute;left:0;right:0;bottom:0;height:2.5px;background:var(--cobalt);}
+.so-tabcount{font-family:var(--fMono);font-size:9.5px;margin-left:6px;color:var(--mute);}
+.so-filter{display:flex;gap:6px;align-items:center;flex-wrap:wrap;padding:10px 13px;
+  border-top:1px solid var(--ruleSoft);background:var(--sheet);}
+.so-filter[data-active="1"]{background:#F7F9FF;border-top-color:#D3DDF6;}
+
+/* ---------- section headers ---------- */
+.so-sechead{display:flex;align-items:center;gap:11px;margin:28px 0 10px;}
+.so-sectitle{font-family:var(--fDisp);font-weight:600;font-size:14.5px;letter-spacing:.22em;
+  text-transform:uppercase;white-space:nowrap;color:var(--ink);}
+.so-secline{flex:1;height:1px;background:var(--ruleSoft);}
+.so-seccount{font-family:var(--fMono);font-size:10.5px;color:var(--mute);white-space:nowrap;}
+
+/* ---------- capture ---------- */
+.so-cap{background:var(--sheet);border:1px solid var(--rule);border-left:3px solid var(--cobalt);
+  border-radius:var(--r);box-shadow:var(--sh);overflow:hidden;}
+.so-caprow{display:flex;align-items:center;}
+.so-capin{flex:1;min-width:0;border:0;outline:0;background:transparent;padding:16px 15px;
+  font-family:var(--fSans);font-size:16px;color:var(--ink);}
+.so-capin::placeholder{color:#A5B0BB;}
+.so-capbtn{margin:8px;border:0;border-radius:2px;background:var(--ink);color:#fff;width:40px;height:40px;
+  display:grid;place-items:center;cursor:pointer;flex:0 0 auto;transition:background .15s,opacity .15s;}
+.so-capbtn:disabled{background:var(--fillHi);color:var(--mute);cursor:not-allowed;}
+@media(hover:hover){.so-capbtn:not(:disabled):hover{background:var(--cobalt);}}
+.so-capline{display:flex;gap:6px;align-items:center;flex-wrap:wrap;padding:10px 13px;border-top:1px solid var(--ruleSoft);}
+.so-caplbl{font-family:var(--fMono);font-size:8.5px;letter-spacing:.18em;text-transform:uppercase;
+  color:var(--mute);flex:0 0 auto;margin-right:3px;}
+.so-caphint{font-family:var(--fMono);font-size:9px;letter-spacing:.05em;color:#A5B0BB;}
+
+/* ---------- chips ---------- */
+.so-chip{font-family:var(--fMono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;
+  padding:6px 10px;border:1px solid var(--rule);border-radius:2px;background:var(--sheet);color:var(--graphite);
+  cursor:pointer;transition:background .13s,border-color .13s,color .13s;}
+@media(hover:hover){.so-chip:hover{border-color:var(--graphite);color:var(--ink);}}
+.so-chip[data-on="1"]{background:var(--ink);border-color:var(--ink);color:#fff;}
+.so-chip[data-tone="do"][data-on="1"]{background:var(--crimson);border-color:var(--crimson);color:#fff;}
+.so-chip[data-tone="plan"][data-on="1"]{background:var(--cobalt);border-color:var(--cobalt);color:#fff;}
+.so-chip[data-tone="deleg"][data-on="1"]{background:var(--graphite);border-color:var(--graphite);color:#fff;}
+.so-chip[data-tone="park"][data-on="1"]{background:var(--mute);border-color:var(--mute);color:#fff;}
+
+/* ---------- cards ---------- */
+.so-card{background:var(--sheet);border:1px solid var(--rule);border-radius:var(--r);box-shadow:var(--sh);
+  overflow:hidden;display:flex;align-items:stretch;margin-bottom:9px;
+  transition:box-shadow .15s,border-color .15s,opacity .15s;}
+@media(hover:hover){.so-card:hover{border-color:#C0C8D1;box-shadow:var(--shHi);}}
+.so-card[data-drag="1"]{opacity:.35;}
+.so-stripe{width:3px;flex:0 0 3px;background:transparent;}
+.so-card[data-urgent="1"] .so-stripe{background:var(--crimson);}
+.so-body{flex:1;padding:11px 12px;min-width:0;cursor:pointer;}
+.so-toprow{display:flex;align-items:center;gap:7px;margin-bottom:6px;flex-wrap:wrap;}
+.so-code{font-family:var(--fMono);font-size:9.5px;letter-spacing:.09em;color:var(--mute);}
+.so-title{font-size:14.5px;line-height:1.4;overflow-wrap:anywhere;}
+.so-card[data-imp="1"] .so-title{font-weight:600;}
+.so-card[data-done="1"]{box-shadow:none;background:#FBFCFC;}
+.so-card[data-done="1"] .so-title{text-decoration:line-through;color:#A5B0BB;}
+.so-note{font-size:12.5px;color:var(--graphite);margin-top:5px;line-height:1.45;}
+
+/* tinted pills, not outlined boxes — fewer competing rectangles per card */
+.so-tag{font-family:var(--fMono);font-size:8.5px;letter-spacing:.11em;text-transform:uppercase;
+  padding:3px 7px;border:0;border-radius:2px;background:var(--fill);color:var(--graphite);white-space:nowrap;}
+.so-tag[data-tone="today"]{background:#E7EDFF;color:var(--cobalt);}
+.so-tag[data-tone="ongoing"]{background:#E1F0ED;color:var(--teal);}
+.so-tag[data-tone="late"]{background:#FCE8EC;color:var(--crimson);}
+
+.so-card[data-compact="1"]{margin-bottom:7px;}
+.so-card[data-compact="1"] .so-body{padding:8px 9px;}
+.so-card[data-compact="1"] .so-toprow{margin-bottom:4px;gap:5px;}
+.so-card[data-compact="1"] .so-title{font-size:12.5px;line-height:1.35;display:-webkit-box;
+  -webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;}
+.so-card[data-compact="1"] .so-note{display:none;}
+.so-card[data-compact="1"] .so-catname{display:none;}
+
+/* ---------- card actions ---------- */
+.so-acts{display:flex;align-items:center;gap:4px;padding-right:8px;flex:0 0 auto;}
+.so-icon{width:32px;height:32px;display:grid;place-items:center;border:0;border-radius:2px;background:transparent;
+  color:var(--mute);cursor:pointer;flex:0 0 auto;padding:0;transition:background .13s,color .13s;}
+@media(hover:hover){.so-icon:hover{background:var(--fill);color:var(--ink);}}
+.so-icon[data-tone="bad"]{color:var(--crimson);}
+@media(hover:hover){.so-icon[data-tone="bad"]:hover{background:#FCE8EC;}}
+.so-tick{width:21px;height:21px;border:1.5px solid var(--rule);border-radius:3px;background:#fff;display:grid;
+  place-items:center;cursor:pointer;flex:0 0 auto;padding:0;color:transparent;transition:all .13s;}
+@media(hover:hover){.so-tick:hover{border-color:var(--teal);color:#C3D9D5;}}
+.so-tick[data-on="1"]{background:var(--teal);border-color:var(--teal);color:#fff;}
+.so-tickcell{display:grid;place-items:center;padding:0 0 0 11px;}
+.so-mini{font-family:var(--fMono);font-size:9px;letter-spacing:.11em;text-transform:uppercase;
+  border:0;border-radius:2px;background:var(--fill);color:var(--graphite);padding:7px 9px;cursor:pointer;
+  white-space:nowrap;transition:background .13s,color .13s;}
+@media(hover:hover){.so-mini:hover{background:var(--fillHi);color:var(--ink);}}
+.so-mini:active{background:#D9E0E6;}
+.so-mini:disabled{opacity:.45;cursor:not-allowed;}
+
+/* ---------- empty ---------- */
+.so-empty{border:1px dashed var(--rule);border-radius:var(--r);background:rgba(255,255,255,.5);
+  padding:26px 18px;text-align:center;}
+.so-emptyt{font-family:var(--fDisp);font-weight:600;font-size:16px;letter-spacing:.16em;
+  text-transform:uppercase;color:var(--graphite);}
+.so-emptys{font-size:13px;color:var(--mute);margin-top:6px;}
+
+/* ---------- board ---------- */
+.so-cols{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:12px;}
+.so-col{background:rgba(255,255,255,.45);border:1px solid var(--rule);border-top:2.5px solid var(--rule);
+  border-radius:var(--r);min-height:220px;padding:11px;transition:background .15s,border-color .15s;}
+.so-col[data-on="1"]{border-top-color:var(--cobalt);background:#F1F5FF;border-color:#B9C7EE;}
+.so-colhead{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:11px;}
+.so-colname{font-family:var(--fDisp);font-weight:600;font-size:14.5px;letter-spacing:.2em;text-transform:uppercase;}
+@media(max-width:760px){
+  .so-cols{display:flex;grid-template-columns:none;overflow-x:auto;scroll-snap-type:x mandatory;
+    -webkit-overflow-scrolling:touch;gap:10px;margin:12px -14px 0;padding:0 14px 12px;}
+  .so-col{flex:0 0 84%;scroll-snap-align:center;min-height:58vh;}
+}
+
+/* ---------- matrix ---------- */
+.so-matrix{display:grid;grid-template-columns:18px 1fr 1fr;gap:9px;margin-top:12px;}
+.so-axc{font-family:var(--fMono);font-size:8.5px;letter-spacing:.18em;text-transform:uppercase;
+  color:var(--mute);text-align:center;align-self:end;padding-bottom:3px;}
+.so-axr{font-family:var(--fMono);font-size:8.5px;letter-spacing:.18em;text-transform:uppercase;
+  color:var(--mute);writing-mode:vertical-rl;transform:rotate(180deg);display:flex;align-items:center;justify-content:center;}
+.so-quad{background:rgba(255,255,255,.45);border:1px solid var(--rule);border-radius:var(--r);padding:11px;
+  min-height:170px;transition:background .15s,border-color .15s;}
+.so-quad[data-on="1"]{background:#F1F5FF;border-color:var(--cobalt);}
+.so-qhead{display:flex;justify-content:space-between;align-items:baseline;gap:6px;}
+.so-qname{font-family:var(--fDisp);font-weight:700;font-size:16px;letter-spacing:.15em;
+  text-transform:uppercase;line-height:1.1;}
+.so-qsub{font-family:var(--fMono);font-size:8px;letter-spacing:.08em;text-transform:uppercase;
+  color:var(--mute);margin:3px 0 10px;}
+.so-quad[data-k="do"]{border-left:3px solid var(--crimson);}
+.so-quad[data-k="plan"]{border-left:3px solid var(--cobalt);}
+.so-quad[data-k="deleg"]{border-left:3px solid var(--graphite);}
+.so-quad[data-k="park"]{border-left:3px solid var(--mute);}
+@media(max-width:520px){
+  .so-matrix{gap:7px;grid-template-columns:14px 1fr 1fr;}
+  .so-quad{padding:8px;min-height:140px;}
+  .so-qname{font-size:13px;letter-spacing:.1em;}
+  .so-qsub{display:none;}
+}
+
+/* ---------- admin ---------- */
+.so-arow{display:flex;gap:7px;align-items:center;background:var(--sheet);border:1px solid var(--rule);
+  border-radius:var(--r);box-shadow:var(--sh);padding:9px;margin-bottom:9px;flex-wrap:wrap;}
+.so-apre{width:72px;flex:0 0 72px;font-family:var(--fMono);text-transform:uppercase;
+  letter-spacing:.09em;text-align:center;}
+.so-aname{flex:1 1 140px;min-width:0;}
+.so-awarn{background:#FDF1F3;border:1px solid #F0C4CE;border-radius:var(--r);color:#8C1229;
+  padding:11px;margin:-4px 0 9px;font-size:13px;}
+
+/* ---------- modal ---------- */
+.so-scrim{position:fixed;inset:0;background:rgba(17,28,41,.45);backdrop-filter:blur(2px);
+  display:flex;align-items:center;justify-content:center;padding:14px;z-index:50;}
+.so-modal{background:var(--sheet);border-top:4px solid var(--cobalt);border-radius:var(--r);box-shadow:var(--shUp);
+  width:100%;max-width:460px;max-height:88vh;overflow:auto;}
+.so-mhead{display:flex;justify-content:space-between;align-items:center;padding:13px 15px;
+  border-bottom:1px solid var(--ruleSoft);position:sticky;top:0;background:var(--sheet);z-index:1;}
+.so-mbody{padding:15px;}
+.so-label{font-family:var(--fMono);font-size:9px;letter-spacing:.18em;text-transform:uppercase;
+  color:var(--mute);display:block;margin:16px 0 7px;}
+.so-input{width:100%;border:1px solid var(--rule);border-radius:2px;background:#fff;padding:10px 11px;
+  font-family:var(--fSans);font-size:15px;color:var(--ink);outline:0;transition:border-color .13s,box-shadow .13s;}
+.so-input:focus{border-color:var(--cobalt);box-shadow:0 0 0 3px rgba(30,69,200,.11);}
+.so-row{display:flex;gap:7px;flex-wrap:wrap;align-items:center;}
+.so-btn{font-family:var(--fDisp);font-weight:600;font-size:15px;letter-spacing:.15em;
+  text-transform:uppercase;padding:11px 17px;border:1px solid var(--ink);border-radius:2px;
+  background:var(--ink);color:#fff;cursor:pointer;transition:background .13s,box-shadow .13s;}
+@media(hover:hover){.so-btn:not(:disabled):hover{background:#1B2A3C;box-shadow:var(--sh);}}
+.so-btn[data-v="ghost"]{background:var(--sheet);color:var(--ink);border-color:var(--rule);}
+@media(hover:hover){.so-btn[data-v="ghost"]:not(:disabled):hover{background:var(--fill);border-color:var(--graphite);}}
+.so-btn[data-v="bad"]{background:var(--sheet);color:var(--crimson);border-color:#EBB9C4;}
+@media(hover:hover){.so-btn[data-v="bad"]:not(:disabled):hover{background:#FDF1F3;border-color:var(--crimson);}}
+.so-btn:disabled{opacity:.45;cursor:not-allowed;}
+
+/* ---------- status strip: quiet unless it has something to say ---------- */
+.so-strip{position:fixed;left:0;right:0;bottom:0;z-index:40;display:flex;justify-content:space-between;gap:12px;
+  background:rgba(252,253,253,.93);backdrop-filter:saturate(150%) blur(10px);border-top:1px solid var(--rule);
+  color:var(--mute);font-family:var(--fMono);font-size:9.5px;letter-spacing:.13em;
+  text-transform:uppercase;padding:10px 15px calc(10px + env(safe-area-inset-bottom));transition:background .2s,color .2s;}
+.so-strip[data-tone="busy"]{background:var(--ink);color:#fff;border-top-color:var(--ink);}
+.so-strip[data-tone="bad"]{background:var(--crimson);color:#fff;border-top-color:var(--crimson);}
+.so-striplink{color:inherit;text-decoration:underline;text-underline-offset:2px;cursor:pointer;
+  background:none;border:0;font:inherit;padding:0;opacity:.85;}
+@media(hover:hover){.so-striplink:hover{opacity:1;}}
+
+/* ---------- setup ---------- */
+.so-setup{max-width:430px;margin:0 auto;padding:56px 14px;}
+.so-setupcard{background:var(--sheet);border:1px solid var(--rule);border-top:3px solid var(--ink);
+  border-radius:var(--r);box-shadow:0 4px 24px rgba(17,28,41,.08);padding:22px;}
+.so-help{font-size:12.5px;color:var(--graphite);line-height:1.55;margin-top:8px;}
+.so-help a{color:var(--cobalt);}
+
+.so-spin{display:inline-block;width:9px;height:9px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;
+  border-radius:50%;animation:so-rot .7s linear infinite;vertical-align:-1px;}
+@keyframes so-rot{to{transform:rotate(360deg);}}
+*:focus-visible{outline:2px solid var(--cobalt);outline-offset:2px;}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important;}}
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js" crossorigin></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js" crossorigin></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.5/babel.min.js" crossorigin></script>
+
+<script type="text/babel" data-presets="react">
+const { useState, useEffect, useMemo, useRef, useCallback } = React;
+
+/* ============ config ============ */
+const T_TASKS = "Tasks";
+const T_CATS  = "Categories";
+const CFG_KEY = "setout.cfg.v2";
+
+const loadCfg = () => {
+  try { return JSON.parse(localStorage.getItem(CFG_KEY)) || null; } catch (e) { return null; }
+};
+const saveCfg = (c) => { try { localStorage.setItem(CFG_KEY, JSON.stringify(c)); } catch (e) {} };
+const clearCfg = () => { try { localStorage.removeItem(CFG_KEY); } catch (e) {} };
+
+/* ============ helpers ============ */
+const iso = (d) => {
+  const x = new Date(d);
+  return x.getFullYear() + "-" + String(x.getMonth() + 1).padStart(2, "0") + "-" + String(x.getDate()).padStart(2, "0");
+};
+const addDays = (n) => iso(new Date(Date.now() + n * 86400000));
+const prettyDate = (s) => {
+  if (!s) return "";
+  const p = s.split("-").map(Number);
+  return new Date(p[0], p[1] - 1, p[2]).toLocaleDateString("en-GB", { weekday: "short", day: "2-digit", month: "short", year: "numeric" });
+};
+const derivePrefix = (n) => (n.replace(/[^A-Za-z]/g, "").slice(0, 3) || "GEN").toUpperCase();
+const quadOf = (t) => (t.important ? (t.urgent ? "do" : "plan") : t.urgent ? "deleg" : "park");
+const chunk = (a, n) => { const o = []; for (let i = 0; i < a.length; i += n) o.push(a.slice(i, i + n)); return o; };
+
+const QUADS = [
+  { k: "do",    name: "Do now",   sub: "important \u00b7 urgent",         imp: true,  urg: true  },
+  { k: "plan",  name: "Schedule", sub: "important \u00b7 not urgent",     imp: true,  urg: false },
+  { k: "deleg", name: "Delegate", sub: "not important \u00b7 urgent",     imp: false, urg: true  },
+  { k: "park",  name: "Park",     sub: "not important \u00b7 not urgent", imp: false, urg: false },
+];
+const COLS = [
+  { k: "Backlog",     name: "Backlog"     },
+  { k: "In progress", name: "In progress" },
+  { k: "Done",        name: "Done"        },
+];
+const DEFAULT_CATS = [
+  { name: "AtkinsR\u00e9alis", code: "ATK", order: 1 },
+  { name: "Heathrow",          code: "LHR", order: 2 },
+  { name: "Team",              code: "TEA", order: 3 },
+  { name: "Personal",          code: "PER", order: 4 },
+];
+
+/* ============ icons ============ */
+const Svg = (p) => (
+  <svg width={p.s || 16} height={p.s || 16} viewBox="0 0 24 24" fill="none"
+    stroke="currentColor" strokeWidth={p.w || 2} strokeLinecap="round" strokeLinejoin="round">{p.children}</svg>
+);
+const IPlus    = (p) => <Svg {...p}><path d="M12 5v14M5 12h14" /></Svg>;
+const ICheck   = (p) => <Svg {...p} w={3}><path d="M20 6L9 17l-5-5" /></Svg>;
+const IRight   = (p) => <Svg {...p}><path d="M5 12h14M13 6l6 6-6 6" /></Svg>;
+const ILeft    = (p) => <Svg {...p}><path d="M19 12H5M11 18l-6-6 6-6" /></Svg>;
+const IClose   = (p) => <Svg {...p}><path d="M18 6L6 18M6 6l12 12" /></Svg>;
+const ITrash   = (p) => <Svg {...p}><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14" /></Svg>;
+const IRefresh = (p) => <Svg {...p}><path d="M21 12a9 9 0 11-3-6.7L21 8" /><path d="M21 3v5h-5" /></Svg>;
+
+/* ============ Airtable REST ============ */
+function makeApi(cfg) {
+  const root = "/api/airtable/";
+  const headers = { "X-Setout-Key": cfg.key, "Content-Type": "application/json" };
+
+  const call = async (url, opts) => {
+    const r = await fetch(url, Object.assign({ headers }, opts || {}));
+    if (!r.ok) {
+      let msg = "HTTP " + r.status;
+      try { const j = await r.json(); if (j && j.error) msg = j.error.message || j.error.type || msg; } catch (e) {}
+      if (r.status === 401) msg = "Wrong passphrase";
+      if (r.status === 404) msg = "Proxy not found — is the site deployed with functions?";
+      if (r.status === 500 && /AIRTABLE_TOKEN|SETOUT_KEY/.test(msg)) msg = "Site is missing its environment variables";
+      throw new Error(msg);
+    }
+    return r.json();
+  };
+
+  return {
+    listAll: async (table) => {
+      let out = [], offset = null;
+      do {
+        const u = root + encodeURIComponent(table) + "?pageSize=100" + (offset ? "&offset=" + offset : "");
+        const j = await call(u);
+        out = out.concat(j.records);
+        offset = j.offset;
+      } while (offset);
+      return out;
+    },
+    create: async (table, fields) => call(root + encodeURIComponent(table), {
+      method: "POST", body: JSON.stringify({ fields: fields, typecast: true })
+    }),
+    update: (table, id, fields) => call(root + encodeURIComponent(table) + "/" + id, {
+      method: "PATCH", body: JSON.stringify({ fields: fields, typecast: true })
+    }),
+    updateMany: async (table, recs) => {
+      for (const group of chunk(recs, 10)) {
+        await call(root + encodeURIComponent(table), {
+          method: "PATCH", body: JSON.stringify({ records: group, typecast: true })
+        });
+      }
+    },
+    remove: (table, id) => call(root + encodeURIComponent(table) + "/" + id, { method: "DELETE" }),
+  };
+}
+
+/* ============ mapping ============ */
+const F = {
+  title: "Title", cat: "Cat", seq: "Seq", note: "Notes", important: "Important",
+  urgent: "Urgent", sorted: "Sorted", status: "Status", plannedFor: "Planned For",
+  kind: "Kind", lastReviewed: "Last Reviewed", completedOn: "Completed On", created: "Created",
+};
+const toFields = (p) => {
+  const o = {};
+  Object.keys(p).forEach((k) => { if (F[k]) o[F[k]] = p[k]; });
+  return o;
+};
+const normTask = (r) => ({
+  id: r.id,
+  title: r.fields[F.title] || "",
+  cat: r.fields[F.cat] || "",
+  seq: r.fields[F.seq] || 0,
+  note: r.fields[F.note] || "",
+  important: !!r.fields[F.important],
+  urgent: !!r.fields[F.urgent],
+  sorted: !!r.fields[F.sorted],
+  status: r.fields[F.status] || "Backlog",
+  plannedFor: r.fields[F.plannedFor] || null,
+  kind: r.fields[F.kind] || "Task",
+  lastReviewed: r.fields[F.lastReviewed] || null,
+  completedOn: r.fields[F.completedOn] || null,
+  created: r.fields[F.created] || null,
+});
+const normCat = (r) => ({
+  id: r.id,
+  name: r.fields.Name || "",
+  code: (r.fields.Code || "").toUpperCase(),
+  order: typeof r.fields.Order === "number" ? r.fields.Order : 999,
+});
+
+/* ============ card ============ */
+function Card(props) {
+  const t = props.task;
+  const late = t.plannedFor && t.plannedFor < iso(new Date()) && t.status !== "Done";
+  return (
+    <div className="so-card" draggable
+      onDragStart={props.onDragStart} onDragEnd={props.onDragEnd}
+      data-drag={props.dragging ? "1" : "0"}
+      data-compact={props.compact ? "1" : "0"}
+      data-urgent={t.urgent ? "1" : "0"}
+      data-imp={t.important ? "1" : "0"}
+      data-done={t.status === "Done" ? "1" : "0"}>
+      <div className="so-stripe" />
+      {props.tick && (
+        <div className="so-tickcell">
+          <button className="so-tick" data-on={t.status === "Done" ? "1" : "0"} onClick={props.onTick} aria-label="Mark done">
+            <ICheck s={13} />
+          </button>
+        </div>
+      )}
+      <div className="so-body" onClick={props.onOpen}>
+        <div className="so-toprow">
+          <span className="so-code">{props.code}</span>
+          <span className="so-tag so-catname">{props.catName}</span>
+          {t.kind === "Thinking" && <span className="so-tag" data-tone="ongoing">Ongoing</span>}
+          {late && <span className="so-tag" data-tone="late">Carried</span>}
+          {!t.sorted && <span className="so-tag">Unsorted</span>}
+        </div>
+        <div className="so-title">{t.title}</div>
+        {t.note ? <div className="so-note">{t.note}</div> : null}
+      </div>
+      {props.children ? <div className="so-acts">{props.children}</div> : null}
+    </div>
+  );
+}
+
+/* ============ setup screen ============ */
+function Setup(props) {
+  const [key, setKey] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState("");
+
+  const connect = async () => {
+    if (!key.trim()) return;
+    setBusy(true); setErr("");
+    try {
+      const api = makeApi({ key: key.trim() });
+      await api.listAll(T_CATS);
+      props.onDone({ key: key.trim() });
+    } catch (e) { setErr(e.message); setBusy(false); }
+  };
+
+  return (
+    <div className="so-setup">
+      <div className="so-setupcard">
+        <div className="so-name">Setout</div>
+        <div className="so-sub">Unlock this device</div>
+
+        <label className="so-label">Passphrase</label>
+        <input className="so-input" type="password" value={key} spellCheck="false"
+          autoComplete="current-password" enterKeyHint="go"
+          onChange={(e) => setKey(e.target.value)}
+          onKeyDown={(e) => { if (e.key === "Enter") connect(); }} />
+        <div className="so-help">
+          This is the <b>SETOUT_KEY</b> set on the site, not your Airtable token.
+          Your Airtable credentials stay on the server and never reach this browser.
+          You only enter this once per device.
+        </div>
+
+        {err ? <div className="so-awarn" style={{ marginTop: 14 }}>{err}</div> : null}
+
+        <div className="so-row" style={{ marginTop: 18 }}>
+          <button className="so-btn" disabled={!key.trim() || busy} onClick={connect}>
+            {busy ? "Checking\u2026" : "Unlock"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ============ app ============ */
+function App() {
+  const [cfg, setCfg] = useState(loadCfg);
+  const [tasks, setTasks] = useState([]);
+  const [cats, setCats] = useState([]);
+  const [ready, setReady] = useState(false);
+  const [pending, setPending] = useState(0);
+  const [err, setErr] = useState("");
+  const [syncedAt, setSyncedAt] = useState(null);
+
+  const [tab, setTab] = useState("today");
+  const [cap, setCap] = useState(() => Number(localStorage.getItem("setout.cap") || 3));
+  const [draft, setDraft] = useState("");
+  const [dCat, setDCat] = useState("");
+  const [dQuad, setDQuad] = useState(null);
+  const [editing, setEditing] = useState(null);
+  const [dragId, setDragId] = useState(null);
+  const [zone, setZone] = useState(null);
+  const [newCat, setNewCat] = useState("");
+  const [newPre, setNewPre] = useState("");
+  const [killCat, setKillCat] = useState(null);
+  const [catFilter, setCatFilter] = useState(() => {
+    try { return JSON.parse(localStorage.getItem("setout.filter")) || []; } catch (e) { return []; }
+  });
+  const [moveTo, setMoveTo] = useState("");
+  const inputRef = useRef(null);
+
+  const TODAY = iso(new Date());
+  const api = useMemo(() => (cfg ? makeApi(cfg) : null), [cfg]);
+
+  const run = useCallback(async (fn) => {
+    setPending((p) => p + 1);
+    try { await fn(); setErr(""); }
+    catch (e) { setErr(e.message || String(e)); }
+    finally { setPending((p) => p - 1); }
+  }, []);
+
+  const pendingRef = useRef(0);
+  useEffect(() => { pendingRef.current = pending; }, [pending]);
+
+  const refresh = useCallback(async () => {
+    if (!api || pendingRef.current > 0) return;
+    try {
+      const [cr, tr] = await Promise.all([api.listAll(T_CATS), api.listAll(T_TASKS)]);
+      let cl = cr.map(normCat).sort((a, b) => a.order - b.order);
+      if (cl.length === 0) {
+        for (const d of DEFAULT_CATS) {
+          const rec = await api.create(T_CATS, { Name: d.name, Code: d.code, Order: d.order });
+          cl.push(normCat(rec));
+        }
+      }
+      setCats(cl);
+      setTasks(tr.map(normTask));
+      setDCat((v) => v || (cl[0] ? cl[0].code : ""));
+      setSyncedAt(new Date());
+      setErr("");
+    } catch (e) { setErr(e.message || String(e)); }
+    finally { setReady(true); }
+  }, [api]);
+
+  useEffect(() => { if (api) refresh(); }, [api, refresh]);
+
+  useEffect(() => {
+    const onVis = () => { if (document.visibilityState === "visible") refresh(); };
+    document.addEventListener("visibilitychange", onVis);
+    return () => document.removeEventListener("visibilitychange", onVis);
+  }, [refresh]);
+
+  useEffect(() => { localStorage.setItem("setout.cap", String(cap)); }, [cap]);
+  useEffect(() => { localStorage.setItem("setout.filter", JSON.stringify(catFilter)); }, [catFilter]);
+
+  /* ---- derived ---- */
+  const catByCode = useMemo(() => {
+    const m = {}; cats.forEach((c) => { m[c.code] = c; }); return m;
+  }, [cats]);
+  const activeFilter = catFilter.filter((c) => catByCode[c]);
+  const shown = useMemo(
+    () => (activeFilter.length === 0 ? tasks : tasks.filter((t) => activeFilter.indexOf(t.cat) !== -1)),
+    [tasks, catFilter, cats]
+  );
+  const toggleFilter = (code) =>
+    setCatFilter((f) => (f.indexOf(code) !== -1 ? f.filter((x) => x !== code) : f.concat([code])));
+
+  const codeOf = (t) => (t.cat || "???") + "-" + String(t.seq || 0).padStart(3, "0");
+  const nameOf = (t) => (catByCode[t.cat] ? catByCode[t.cat].name : "Uncategorised");
+  const nextSeq = (code, list) => list.filter((t) => t.cat === code).reduce((m, t) => Math.max(m, t.seq || 0), 0) + 1;
+
+  const live = shown.filter((t) => t.status !== "Done");
+  const todays = shown.filter((t) => t.plannedFor === TODAY);
+  const carried = shown.filter((t) => t.plannedFor && t.plannedFor < TODAY && t.status !== "Done");
+  const backlog = live.filter((t) => !t.plannedFor);
+  const upcoming = live.filter((t) => t.plannedFor && t.plannedFor > TODAY);
+  const doneToday = todays.filter((t) => t.status === "Done").length;
+  const openToday = todays.length - doneToday;
+  const unsorted = live.filter((t) => !t.sorted);
+  const suggestions = useMemo(() => {
+    const rank = { do: 0, plan: 1, deleg: 2, park: 3 };
+    return backlog.filter((t) => t.sorted).sort((a, b) => rank[quadOf(a)] - rank[quadOf(b)]).slice(0, 5);
+  }, [tasks]);
+
+  /* ---- writes ---- */
+  const patch = (id, p) => {
+    setTasks((ts) => ts.map((t) => (t.id === id ? Object.assign({}, t, p) : t)));
+    if (String(id).indexOf("tmp") === 0) return;
+    run(() => api.update(T_TASKS, id, toFields(p)));
+  };
+  const removeTask = (id) => {
+    setTasks((ts) => ts.filter((t) => t.id !== id));
+    if (String(id).indexOf("tmp") === 0) return;
+    run(() => api.remove(T_TASKS, id));
+  };
+  const capture = () => {
+    const title = draft.trim().slice(0, 100);
+    if (!title || !dCat) return;
+    const seq = nextSeq(dCat, tasks);
+    const q = dQuad ? QUADS.filter((x) => x.k === dQuad)[0] : null;
+    const body = {
+      title: title, cat: dCat, seq: seq, note: "",
+      important: q ? q.imp : false, urgent: q ? q.urg : false, sorted: !!q,
+      status: "Backlog", plannedFor: null, kind: "Task",
+      created: new Date().toISOString(),
+    };
+    const tmp = Object.assign({ id: "tmp" + Date.now() }, body, { lastReviewed: null, completedOn: null });
+    setTasks((ts) => [tmp].concat(ts));
+    setDraft(""); setDQuad(null);
+    if (inputRef.current) inputRef.current.focus();
+    run(async () => {
+      const rec = await api.create(T_TASKS, toFields(body));
+      setTasks((ts) => ts.map((t) => (t.id === tmp.id ? normTask(rec) : t)));
+    });
+  };
+  const setQuad = (id, q) => {
+    const d = QUADS.filter((x) => x.k === q)[0];
+    patch(id, { important: d.imp, urgent: d.urg, sorted: true });
+  };
+  const setStatus = (id, s) =>
+    patch(id, s === "Done"
+      ? { status: s, completedOn: TODAY, plannedFor: (tasks.filter((t) => t.id === id)[0] || {}).plannedFor || TODAY }
+      : { status: s, completedOn: null });
+  const toggleDone = (t) => (t.status === "Done" ? setStatus(t.id, "Backlog") : setStatus(t.id, "Done"));
+  const moveCategory = (id, code) => patch(id, { cat: code, seq: nextSeq(code, tasks) });
+
+  /* ---- drag ---- */
+  const dragProps = (id) => ({
+    onDragStart: (e) => { e.dataTransfer.setData("text/plain", id); e.dataTransfer.effectAllowed = "move"; setDragId(id); },
+    onDragEnd: () => { setDragId(null); setZone(null); },
+    dragging: dragId === id,
+  });
+  const dropProps = (key, apply) => ({
+    onDragOver: (e) => { e.preventDefault(); e.dataTransfer.dropEffect = "move"; setZone(key); },
+    onDragLeave: () => setZone((z) => (z === key ? null : z)),
+    onDrop: (e) => {
+      e.preventDefault();
+      const id = e.dataTransfer.getData("text/plain") || dragId;
+      if (id) apply(id);
+      setDragId(null); setZone(null);
+    },
+    "data-on": zone === key ? "1" : "0",
+  });
+
+  /* ---- category admin ---- */
+  const renameCat = (id, name) => {
+    setCats((cs) => cs.map((c) => (c.id === id ? Object.assign({}, c, { name: name }) : c)));
+  };
+  const commitCatName = (c) => run(() => api.update(T_CATS, c.id, { Name: c.name }));
+  const recodeCat = (c, code) => {
+    const old = c.code;
+    if (!code || code === old) return;
+    if (catByCode[code]) { setErr("Code " + code + " is already in use"); return; }
+    setCats((cs) => cs.map((x) => (x.id === c.id ? Object.assign({}, x, { code: code }) : x)));
+    const affected = tasks.filter((t) => t.cat === old);
+    setTasks((ts) => ts.map((t) => (t.cat === old ? Object.assign({}, t, { cat: code }) : t)));
+    if (dCat === old) setDCat(code);
+    run(async () => {
+      await api.update(T_CATS, c.id, { Code: code });
+      if (affected.length) {
+        await api.updateMany(T_TASKS, affected.map((t) => ({ id: t.id, fields: { Cat: code } })));
+      }
+    });
+  };
+  const addCat = () => {
+    const name = newCat.trim();
+    if (!name) return;
+    const code = (newPre || derivePrefix(name)).toUpperCase();
+    if (catByCode[code]) { setErr("Code " + code + " is already in use"); return; }
+    setNewCat(""); setNewPre("");
+    run(async () => {
+      const rec = await api.create(T_CATS, { Name: name, Code: code, Order: cats.length + 1 });
+      setCats((cs) => cs.concat([normCat(rec)]));
+    });
+  };
+  const deleteCat = (c, targetCode) => {
+    const affected = tasks.filter((t) => t.cat === c.code);
+    setKillCat(null);
+    setCats((cs) => cs.filter((x) => x.id !== c.id));
+    if (dCat === c.code) setDCat(targetCode || "");
+    run(async () => {
+      if (affected.length && targetCode) {
+        let n = tasks.filter((t) => t.cat === targetCode).reduce((m, t) => Math.max(m, t.seq || 0), 0);
+        const recs = affected.map((t) => ({ id: t.id, fields: { Cat: targetCode, Seq: ++n } }));
+        await api.updateMany(T_TASKS, recs);
+        setTasks((ts) => ts.map((t) => (t.cat === c.code ? Object.assign({}, t, { cat: targetCode }) : t)));
+      }
+      await api.remove(T_CATS, c.id);
+    });
+  };
+
+  /* ---- gates ---- */
+  if (!cfg) return <Setup onDone={(c) => { saveCfg(c); setCfg(c); }} />;
+  if (!ready) return (
+    <div className="so-setup"><div className="so-setupcard">
+      <div className="so-name">Setout</div>
+      <div className="so-sub">Loading your sheet…</div>
+    </div></div>
+  );
+
+  const Section = (p) => (
+    <div className="so-sechead">
+      <span className="so-sectitle">{p.title}</span>
+      {p.count !== undefined && <span className="so-seccount">{p.count}</span>}
+      <span className="so-secline" />
+      {p.hint && <span className="so-seccount">{p.hint}</span>}
+    </div>
+  );
+
+  const Quad = (p) => {
+    const list = live.filter((t) => t.sorted && quadOf(t) === p.q.k);
+    return (
+      <div className="so-quad" data-k={p.q.k} {...dropProps("q-" + p.q.k, (id) => setQuad(id, p.q.k))}>
+        <div className="so-qhead">
+          <span className="so-qname">{p.q.name}</span>
+          <span className="so-seccount">{list.length}</span>
+        </div>
+        <div className="so-qsub">{p.q.sub}</div>
+        {list.length === 0 && <div className="so-note" style={{ opacity: .7 }}>Empty</div>}
+        {list.map((t) => (
+          <Card key={t.id} task={t} code={codeOf(t)} catName={nameOf(t)} compact
+            onOpen={() => setEditing(t.id)} {...dragProps(t.id)}>
+            {t.plannedFor === TODAY
+              ? <span className="so-tag" data-tone="today">Today</span>
+              : <button className="so-mini" onClick={() => patch(t.id, { plannedFor: TODAY })}>Today</button>}
+          </Card>
+        ))}
+      </div>
+    );
+  };
+
+  const editingTask = editing ? tasks.filter((t) => t.id === editing)[0] : null;
+
+  return (
+    <div className="so-wrap">
+      {/* title block */}
+      <div className="so-block">
+        <div className="so-blockrow">
+          <div>
+            <div className="so-name">Setout</div>
+            <div className="so-sub">Daily focus sheet</div>
+          </div>
+          <div className="so-meta">
+            <div className="so-field">
+              <div className="so-flabel">Date</div>
+              <div className="so-fval">{prettyDate(TODAY)}</div>
+            </div>
+            <div className="so-field">
+              <div className="so-flabel">Focus</div>
+              <div className={"so-fval" + (todays.length > cap ? " so-over" : "")}>
+                {todays.length === 0 ? "—" : String(doneToday).padStart(2, "0") + "/" + String(todays.length).padStart(2, "0")}
+              </div>
+            </div>
+          </div>
+        </div>
+        <div className="so-tabs">
+          {[
+            { k: "today",  label: "Today",  n: openToday + carried.length },
+            { k: "matrix", label: "Matrix", n: unsorted.length || undefined },
+            { k: "board",  label: "Board",  n: live.length },
+            { k: "admin",  label: "Admin" },
+          ].map((t) => (
+            <button key={t.k} className="so-tab" data-on={tab === t.k ? "1" : "0"} onClick={() => setTab(t.k)}>
+              {t.label}{t.n ? <span className="so-tabcount">{t.n}</span> : null}
+            </button>
+          ))}
+        </div>
+        {tab !== "admin" && cats.length > 1 && (
+          <div className="so-filter" data-active={activeFilter.length ? "1" : "0"}>
+            <span className="so-caplbl">
+              Show{activeFilter.length ? " \u00b7 " + activeFilter.length + " of " + cats.length : ""}
+            </span>
+            {cats.map((c) => (
+              <button key={c.id} className="so-chip"
+                data-on={activeFilter.indexOf(c.code) !== -1 ? "1" : "0"}
+                onClick={() => toggleFilter(c.code)}>{c.name}</button>
+            ))}
+            {activeFilter.length > 0 && (
+              <button className="so-mini" onClick={() => setCatFilter([])}>Show all</button>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* ===== TODAY ===== */}
+      {tab === "today" && (
+        <React.Fragment>
+          <div className="so-sechead" style={{ marginTop: 18 }}>
+            <span className="so-sectitle">Capture</span><span className="so-secline" />
+            <span className="so-seccount">{100 - draft.length} left</span>
+          </div>
+          <div className="so-cap">
+            <div className="so-caprow">
+              <input ref={inputRef} className="so-capin" value={draft} maxLength={100}
+                placeholder="What just came up?" enterKeyHint="done"
+                onChange={(e) => setDraft(e.target.value)}
+                onKeyDown={(e) => { if (e.key === "Enter") capture(); }} />
+              <button className="so-capbtn" onClick={capture} disabled={!draft.trim()} aria-label="Add task">
+                <IPlus s={18} />
+              </button>
+            </div>
+            <div className="so-capline">
+              <span className="so-caplbl">Bucket</span>
+              {cats.map((c) => (
+                <button key={c.id} className="so-chip" data-on={dCat === c.code ? "1" : "0"} onClick={() => setDCat(c.code)}>{c.name}</button>
+              ))}
+            </div>
+            <div className="so-capline">
+              <span className="so-caplbl">Priority</span>
+              {QUADS.map((q) => (
+                <button key={q.k} className="so-chip" data-tone={q.k} data-on={dQuad === q.k ? "1" : "0"}
+                  title={q.sub} onClick={() => setDQuad(dQuad === q.k ? null : q.k)}>{q.name}</button>
+              ))}
+              <span className="so-caphint">{dQuad ? QUADS.filter((x) => x.k === dQuad)[0].sub : "skip to triage later"}</span>
+            </div>
+          </div>
+
+          {carried.length > 0 && (
+            <React.Fragment>
+              <Section title="Carried over" count={carried.length} hint="decide each one" />
+              {carried.map((t) => (
+                <Card key={t.id} task={t} code={codeOf(t)} catName={nameOf(t)} tick
+                  onTick={() => toggleDone(t)} onOpen={() => setEditing(t.id)} {...dragProps(t.id)}>
+                  <button className="so-mini" onClick={() => patch(t.id, { plannedFor: TODAY })}>Keep</button>
+                  <button className="so-mini" onClick={() => patch(t.id, { plannedFor: addDays(1) })}>Tmrw</button>
+                  <button className="so-mini" onClick={() => patch(t.id, { plannedFor: null })}>Backlog</button>
+                </Card>
+              ))}
+            </React.Fragment>
+          )}
+
+          <Section title="Today" count={doneToday + "/" + todays.length}
+            hint={todays.length > cap ? "over your cap of " + cap : "cap " + cap} />
+          {todays.length === 0 ? (
+            <div className="so-empty">
+              <div className="so-emptyt">Nothing set out yet</div>
+              <div className="so-emptys">Pick two or three from the backlog below. That's the day.</div>
+            </div>
+          ) : todays.map((t) => (
+            <Card key={t.id} task={t} code={codeOf(t)} catName={nameOf(t)} tick
+              onTick={() => toggleDone(t)} onOpen={() => setEditing(t.id)} {...dragProps(t.id)}>
+              <button className="so-mini" title="Move to tomorrow"
+                onClick={() => patch(t.id, { plannedFor: addDays(1) })}>Tmrw</button>
+              {t.kind === "Thinking" && t.status !== "Done"
+                ? <button className="so-mini" title="Log a review and return it to the backlog"
+                    onClick={() => patch(t.id, { plannedFor: null, lastReviewed: TODAY })}>Reviewed</button>
+                : <button className="so-mini" title="Return to the backlog, unscheduled"
+                    onClick={() => patch(t.id, { plannedFor: null })}>Backlog</button>}
+            </Card>
+          ))}
+
+          {upcoming.length > 0 && (
+            <React.Fragment>
+              <Section title="Tomorrow" count={upcoming.length} hint="already queued" />
+              {upcoming.map((t) => (
+                <Card key={t.id} task={t} code={codeOf(t)} catName={nameOf(t)} compact
+                  onOpen={() => setEditing(t.id)} {...dragProps(t.id)}>
+                  <button className="so-mini" onClick={() => patch(t.id, { plannedFor: TODAY })}>Today</button>
+                  <button className="so-mini" onClick={() => patch(t.id, { plannedFor: null })}>Backlog</button>
+                </Card>
+              ))}
+            </React.Fragment>
+          )}
+
+          <Section title="Pull from backlog" count={backlog.length} hint="highest priority first" />
+          {suggestions.length === 0 ? (
+            <div className="so-empty">
+              <div className="so-emptyt">Backlog is clear</div>
+              <div className="so-emptys">Anything unsorted is waiting on the Matrix tab.</div>
+            </div>
+          ) : suggestions.map((t) => (
+            <Card key={t.id} task={t} code={codeOf(t)} catName={nameOf(t)}
+              onOpen={() => setEditing(t.id)} {...dragProps(t.id)}>
+              <button className="so-mini" onClick={() => patch(t.id, { plannedFor: TODAY })}>Add to today</button>
+            </Card>
+          ))}
+        </React.Fragment>
+      )}
+
+      {/* ===== MATRIX ===== */}
+      {tab === "matrix" && (
+        <React.Fragment>
+          {unsorted.length > 0 && (
+            <React.Fragment>
+              <Section title="Unsorted" count={unsorted.length} hint="drop one into a quadrant" />
+              {unsorted.map((t) => (
+                <Card key={t.id} task={t} code={codeOf(t)} catName={nameOf(t)}
+                  onOpen={() => setEditing(t.id)} {...dragProps(t.id)} />
+              ))}
+            </React.Fragment>
+          )}
+          <Section title="Priority matrix" hint="drag between quadrants" />
+          <div className="so-matrix">
+            <div />
+            <div className="so-axc">Urgent</div>
+            <div className="so-axc">Not urgent</div>
+            <div className="so-axr">Important</div>
+            <Quad q={QUADS[0]} />
+            <Quad q={QUADS[1]} />
+            <div className="so-axr">Not important</div>
+            <Quad q={QUADS[2]} />
+            <Quad q={QUADS[3]} />
+          </div>
+        </React.Fragment>
+      )}
+
+      {/* ===== BOARD ===== */}
+      {tab === "board" && (
+        <React.Fragment>
+          <Section title="Board" hint="drag, or swipe across" />
+          <div className="so-cols">
+            {COLS.map((col, ci) => {
+              const list = shown.filter((t) => t.status === col.k);
+              return (
+                <div key={col.k} className="so-col" {...dropProps("col-" + col.k, (id) => setStatus(id, col.k))}>
+                  <div className="so-colhead">
+                    <span className="so-colname">{col.name}</span>
+                    <span className="so-seccount">{list.length}</span>
+                  </div>
+                  {list.length === 0 && <div className="so-note" style={{ opacity: .7 }}>Empty</div>}
+                  {list.map((t) => (
+                    <Card key={t.id} task={t} code={codeOf(t)} catName={nameOf(t)} compact
+                      onOpen={() => setEditing(t.id)} {...dragProps(t.id)}>
+                      {ci > 0 && <button className="so-icon" title={"Move to " + COLS[ci - 1].name}
+                        onClick={() => setStatus(t.id, COLS[ci - 1].k)}><ILeft s={15} /></button>}
+                      {ci < 2 && <button className="so-icon" title={"Move to " + COLS[ci + 1].name}
+                        onClick={() => setStatus(t.id, COLS[ci + 1].k)}><IRight s={15} /></button>}
+                    </Card>
+                  ))}
+                </div>
+              );
+            })}
+          </div>
+        </React.Fragment>
+      )}
+
+      {/* ===== ADMIN ===== */}
+      {tab === "admin" && (
+        <React.Fragment>
+          <Section title="Categories" count={cats.length} hint="code · name · tasks" />
+          {cats.map((c) => {
+            const n = tasks.filter((t) => t.cat === c.code).length;
+            const others = cats.filter((x) => x.id !== c.id);
+            return (
+              <div key={c.id}>
+                <div className="so-arow">
+                  <input className="so-input so-apre" defaultValue={c.code} maxLength={4}
+                    onBlur={(e) => recodeCat(c, e.target.value.replace(/[^A-Za-z]/g, "").toUpperCase())} />
+                  <input className="so-input so-aname" value={c.name}
+                    onChange={(e) => renameCat(c.id, e.target.value)}
+                    onBlur={() => commitCatName(c)} />
+                  <span className="so-seccount">{n}</span>
+                  <button className="so-icon" data-tone="bad" title="Remove category"
+                    onClick={() => {
+                      if (cats.length === 1) { setErr("Keep at least one category"); return; }
+                      if (n === 0) { deleteCat(c, null); return; }
+                      setKillCat(killCat === c.id ? null : c.id);
+                      setMoveTo(others[0] ? others[0].code : "");
+                    }}><ITrash s={15} /></button>
+                </div>
+                {killCat === c.id && (
+                  <div className="so-awarn">
+                    <div style={{ marginBottom: 8 }}>{n} task{n === 1 ? "" : "s"} use this category. Move them where?</div>
+                    <div className="so-row">
+                      <select className="so-input" style={{ flex: "1 1 140px", width: "auto" }}
+                        value={moveTo} onChange={(e) => setMoveTo(e.target.value)}>
+                        {others.map((x) => <option key={x.id} value={x.code}>{x.name}</option>)}
+                      </select>
+                      <button className="so-mini" onClick={() => deleteCat(c, moveTo)}>Move and delete</button>
+                      <button className="so-mini" onClick={() => setKillCat(null)}>Cancel</button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+
+          <div className="so-arow" style={{ borderStyle: "dashed" }}>
+            <input className="so-input so-apre" placeholder="COD" maxLength={4} value={newPre}
+              onChange={(e) => setNewPre(e.target.value.replace(/[^A-Za-z]/g, "").toUpperCase())} />
+            <input className="so-input so-aname" placeholder="New category name" value={newCat}
+              onChange={(e) => setNewCat(e.target.value)}
+              onKeyDown={(e) => { if (e.key === "Enter") addCat(); }} />
+            <button className="so-mini" disabled={!newCat.trim()} onClick={addCat}>Add</button>
+          </div>
+          <div className="so-note">Renaming is safe. Changing a code re-letters every task in that category.</div>
+
+          <Section title="Daily focus cap" hint="how many you'll commit to" />
+          <div className="so-row">
+            {[2, 3, 4, 5].map((n) => (
+              <button key={n} className="so-chip" data-on={cap === n ? "1" : "0"} onClick={() => setCap(n)}>{n} a day</button>
+            ))}
+          </div>
+
+          <Section title="Connection" hint="via site proxy" />
+          <div className="so-row">
+            <button className="so-btn" data-v="ghost" onClick={refresh}>
+              <IRefresh s={13} /> <span style={{ marginLeft: 6 }}>Refresh now</span>
+            </button>
+            <button className="so-btn" data-v="bad" onClick={() => { clearCfg(); setCfg(null); }}>Lock this device</button>
+          </div>
+          <div className="so-note" style={{ marginTop: 8 }}>
+            Your Airtable token never reaches this browser — it stays on the server. Only your passphrase is stored here.
+          </div>
+        </React.Fragment>
+      )}
+
+      {/* ===== status strip ===== */}
+      <div className="so-strip" data-tone={err ? "bad" : (pending > 0 ? "busy" : "")}>
+        <span>{err ? err : (pending > 0 ? <span><span className="so-spin" /> Saving…</span> : "Synced " + (syncedAt ? syncedAt.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" }) : "\u2014"))}</span>
+        <button className="so-striplink" onClick={refresh}>Refresh</button>
+      </div>
+
+      {/* ===== edit sheet ===== */}
+      {editingTask && (
+        <div className="so-scrim" onClick={() => setEditing(null)}>
+          <div className="so-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="so-mhead">
+              <span className="so-code">{codeOf(editingTask)}</span>
+              <button className="so-icon" onClick={() => setEditing(null)} aria-label="Close"><IClose s={18} /></button>
+            </div>
+            <div className="so-mbody">
+              <label className="so-label" style={{ marginTop: 0 }}>Task</label>
+              <input className="so-input" value={editingTask.title} maxLength={100}
+                onChange={(e) => setTasks((ts) => ts.map((t) => t.id === editingTask.id ? Object.assign({}, t, { title: e.target.value }) : t))}
+                onBlur={(e) => run(() => api.update(T_TASKS, editingTask.id, { Title: e.target.value }))} />
+
+              <label className="so-label">Notes</label>
+              <textarea className="so-input" rows={3} value={editingTask.note} placeholder="Optional detail"
+                onChange={(e) => setTasks((ts) => ts.map((t) => t.id === editingTask.id ? Object.assign({}, t, { note: e.target.value }) : t))}
+                onBlur={(e) => run(() => api.update(T_TASKS, editingTask.id, { Notes: e.target.value }))} />
+
+              <label className="so-label">Category</label>
+              <div className="so-row">
+                {cats.map((c) => (
+                  <button key={c.id} className="so-chip" data-on={editingTask.cat === c.code ? "1" : "0"}
+                    onClick={() => moveCategory(editingTask.id, c.code)}>{c.name}</button>
+                ))}
+              </div>
+
+              <label className="so-label">Quadrant</label>
+              <div className="so-row">
+                {QUADS.map((q) => (
+                  <button key={q.k} className="so-chip" data-on={editingTask.sorted && quadOf(editingTask) === q.k ? "1" : "0"}
+                    onClick={() => setQuad(editingTask.id, q.k)}>{q.name}</button>
+                ))}
+              </div>
+
+              <label className="so-label">Status</label>
+              <div className="so-row">
+                {COLS.map((c) => (
+                  <button key={c.k} className="so-chip" data-on={editingTask.status === c.k ? "1" : "0"}
+                    onClick={() => setStatus(editingTask.id, c.k)}>{c.name}</button>
+                ))}
+              </div>
+
+              <label className="so-label">Planned for</label>
+              <div className="so-row">
+                <button className="so-chip" data-on={editingTask.plannedFor === TODAY ? "1" : "0"}
+                  onClick={() => patch(editingTask.id, { plannedFor: TODAY })}>Today</button>
+                <button className="so-chip" data-on={editingTask.plannedFor === addDays(1) ? "1" : "0"}
+                  onClick={() => patch(editingTask.id, { plannedFor: addDays(1) })}>Tomorrow</button>
+                <button className="so-chip" data-on={!editingTask.plannedFor ? "1" : "0"}
+                  onClick={() => patch(editingTask.id, { plannedFor: null })}>Backlog</button>
+              </div>
+
+              <label className="so-label">Kind</label>
+              <div className="so-row">
+                <button className="so-chip" data-on={editingTask.kind !== "Thinking" ? "1" : "0"}
+                  onClick={() => patch(editingTask.id, { kind: "Task" })}>One-off task</button>
+                <button className="so-chip" data-on={editingTask.kind === "Thinking" ? "1" : "0"}
+                  onClick={() => patch(editingTask.id, { kind: "Thinking" })}>Ongoing thinking</button>
+              </div>
+              {editingTask.lastReviewed && <div className="so-note" style={{ marginTop: 8 }}>Last reviewed {prettyDate(editingTask.lastReviewed)}</div>}
+
+              <div className="so-row" style={{ marginTop: 22, justifyContent: "space-between" }}>
+                <button className="so-btn" data-v="bad" onClick={() => { removeTask(editingTask.id); setEditing(null); }}>Delete</button>
+                <button className="so-btn" onClick={() => setEditing(null)}>Done</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+</script>
+</body>
+</html>
