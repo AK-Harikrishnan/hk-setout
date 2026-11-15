@@ -6,7 +6,7 @@ Hari's personal daily-focus app. Read this before changing anything. Stack rules
 ## Shape
 
 - **Tier A**: `public/index.html` (React 18 UMD + Babel standalone, no build) and one Netlify Function.
-- **Function**: `netlify/functions/airtable.js`, an ES module exporting `config = { path: "/api/airtable/*" }`.
+- **Function**: `netlify/functions/airtable.mjs`, an ES module exporting `config = { path: "/api/airtable/*" }`.
   Constant-time passphrase check, allowlist of tables `Tasks` and `Categories`, methods GET/POST/PATCH/DELETE,
   record-ID shape check.
 - **Env vars (Netlify only)**: `AIRTABLE_TOKEN`, `AIRTABLE_BASE`, `SETOUT_KEY`. This app keeps the older
@@ -46,18 +46,20 @@ These came from Hari's feedback. Each fixed a real gap.
 
 ## Open items, in priority order
 
-1. **Delete has no confirmation.** Hari's standing rule is never to delete without confirming. The edit sheet's
-   Delete button and the category bin remove straight away. Add a confirm step before shipping anything else.
-2. **No `APP_VERSION`.** `check_client.py` expects one. Add the constant and show it in the footer.
-3. **Seq can collide** if two devices capture into the same category within one refresh window. Low risk for one user.
-4. **Aptos fallback.** Decide whether to pick a web-licensed match so laptop and phone look identical.
-5. **Logo.** None yet. Hari's standing collateral layout puts a logo bottom right; the Setout mark (ink square, white
+1. **Seq can collide** if two devices capture into the same category within one refresh window. Low risk for one user.
+2. **Aptos fallback.** Decide whether to pick a web-licensed match so laptop and phone look identical.
+3. **Logo.** None yet. Hari's standing collateral layout puts a logo bottom right; the Setout mark (ink square, white
    inner frame, cobalt bar) is what the guide uses.
-6. A stray empty base named "Setout" (`appsytQeavnb4i1WC`) was left by a first attempt. Hari should delete it.
-7. The default categories (AtkinsRéalis, Heathrow, Team, Personal) are seeded by the app on first load if the
+4. A stray empty base named "Setout" (`appsytQeavnb4i1WC`) was left by a first attempt. Hari should delete it.
+5. The default categories (AtkinsRéalis, Heathrow, Team, Personal) are seeded by the app on first load if the
    Categories table is empty. They were never inserted directly.
+
+Done in v0.1.1: deleting a task or a category now asks first (Hari's standing rule), and `APP_VERSION` shows in the status strip.
 
 ## Making a change
 
 Clone fresh, branch `claude/<change>`, bump `APP_VERSION`, run `python3 check_client.py <dir>`, open a PR,
 give Hari the Deploy Preview link, ship only when he says so. Never `netlify deploy --prod` from a folder.
+
+`check_client.py` reports `client: []` and a "Tasks/Categories placeholder" flag for Setout. Both are false positives:
+the client builds its URLs from the `T_TASKS` / `T_CATS` constants, which the checker cannot see. The proxy list is correct.

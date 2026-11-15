@@ -265,6 +265,7 @@ body{
 const { useState, useEffect, useMemo, useRef, useCallback } = React;
 
 /* ============ config ============ */
+const APP_VERSION = "0.1.1";
 const T_TASKS = "Tasks";
 const T_CATS  = "Categories";
 const CFG_KEY = "setout.cfg.v2";
@@ -333,7 +334,7 @@ function makeApi(cfg) {
       try { const j = await r.json(); if (j && j.error) msg = j.error.message || j.error.type || msg; } catch (e) {}
       if (r.status === 401) msg = "Wrong passphrase";
       if (r.status === 404) msg = "Proxy not found — is the site deployed with functions?";
-      if (r.status === 500 && /AIRTABLE_TOKEN|SETOUT_KEY/.test(msg)) msg = "Site is missing its environment variables";
+      if (r.status === 500 && /is missing/.test(msg)) msg = "Site is missing its environment variables";
       throw new Error(msg);
     }
     return r.json();
@@ -503,6 +504,7 @@ function App() {
   const [newCat, setNewCat] = useState("");
   const [newPre, setNewPre] = useState("");
   const [killCat, setKillCat] = useState(null);
+  const [confirmDel, setConfirmDel] = useState(null);
   const [catFilter, setCatFilter] = useState(() => {
     try { return JSON.parse(localStorage.getItem("setout.filter")) || []; } catch (e) { return []; }
   });
@@ -551,6 +553,7 @@ function App() {
   }, [refresh]);
 
   useEffect(() => { localStorage.setItem("setout.cap", String(cap)); }, [cap]);
+  useEffect(() => { setConfirmDel(null); }, [editing]);
   useEffect(() => { localStorage.setItem("setout.filter", JSON.stringify(catFilter)); }, [catFilter]);
 
   /* ---- derived ---- */
@@ -953,22 +956,34 @@ function App() {
                   <button className="so-icon" data-tone="bad" title="Remove category"
                     onClick={() => {
                       if (cats.length === 1) { setErr("Keep at least one category"); return; }
-                      if (n === 0) { deleteCat(c, null); return; }
+                      if (n === 0) { setKillCat(killCat === c.id ? null : c.id); return; }
                       setKillCat(killCat === c.id ? null : c.id);
                       setMoveTo(others[0] ? others[0].code : "");
                     }}><ITrash s={15} /></button>
                 </div>
                 {killCat === c.id && (
                   <div className="so-awarn">
-                    <div style={{ marginBottom: 8 }}>{n} task{n === 1 ? "" : "s"} use this category. Move them where?</div>
-                    <div className="so-row">
-                      <select className="so-input" style={{ flex: "1 1 140px", width: "auto" }}
-                        value={moveTo} onChange={(e) => setMoveTo(e.target.value)}>
-                        {others.map((x) => <option key={x.id} value={x.code}>{x.name}</option>)}
-                      </select>
-                      <button className="so-mini" onClick={() => deleteCat(c, moveTo)}>Move and delete</button>
-                      <button className="so-mini" onClick={() => setKillCat(null)}>Cancel</button>
-                    </div>
+                    {n === 0 ? (
+                      <React.Fragment>
+                        <div style={{ marginBottom: 8 }}>Delete the category "{c.name}"? No tasks use it. This can't be undone.</div>
+                        <div className="so-row">
+                          <button className="so-mini" onClick={() => deleteCat(c, null)}>Yes, delete</button>
+                          <button className="so-mini" onClick={() => setKillCat(null)}>Cancel</button>
+                        </div>
+                      </React.Fragment>
+                    ) : (
+                      <React.Fragment>
+                        <div style={{ marginBottom: 8 }}>{n} task{n === 1 ? "" : "s"} use this category. Move them where? Then "{c.name}" is deleted.</div>
+                        <div className="so-row">
+                          <select className="so-input" style={{ flex: "1 1 140px", width: "auto" }}
+                            value={moveTo} onChange={(e) => setMoveTo(e.target.value)}>
+                            {others.map((x) => <option key={x.id} value={x.code}>{x.name}</option>)}
+                          </select>
+                          <button className="so-mini" onClick={() => deleteCat(c, moveTo)}>Move and delete</button>
+                          <button className="so-mini" onClick={() => setKillCat(null)}>Cancel</button>
+                        </div>
+                      </React.Fragment>
+                    )}
                   </div>
                 )}
               </div>
@@ -1008,7 +1023,7 @@ function App() {
       {/* ===== status strip ===== */}
       <div className="so-strip" data-tone={err ? "bad" : (pending > 0 ? "busy" : "")}>
         <span>{err ? err : (pending > 0 ? <span><span className="so-spin" /> Saving…</span> : "Synced " + (syncedAt ? syncedAt.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" }) : "\u2014"))}</span>
-        <button className="so-striplink" onClick={refresh}>Refresh</button>
+        <span><span style={{ opacity: .7, marginRight: 12 }}>v{APP_VERSION}</span><button className="so-striplink" onClick={refresh}>Refresh</button></span>
       </div>
 
       {/* ===== edit sheet ===== */}
@@ -1073,10 +1088,20 @@ function App() {
               </div>
               {editingTask.lastReviewed && <div className="so-note" style={{ marginTop: 8 }}>Last reviewed {prettyDate(editingTask.lastReviewed)}</div>}
 
-              <div className="so-row" style={{ marginTop: 22, justifyContent: "space-between" }}>
-                <button className="so-btn" data-v="bad" onClick={() => { removeTask(editingTask.id); setEditing(null); }}>Delete</button>
-                <button className="so-btn" onClick={() => setEditing(null)}>Done</button>
-              </div>
+              {confirmDel === editingTask.id ? (
+                <div className="so-awarn" style={{ marginTop: 22 }}>
+                  <div style={{ marginBottom: 10 }}>Delete "{editingTask.title}"? This can't be undone.</div>
+                  <div className="so-row">
+                    <button className="so-btn" data-v="bad" onClick={() => { removeTask(editingTask.id); setEditing(null); }}>Yes, delete</button>
+                    <button className="so-btn" data-v="ghost" onClick={() => setConfirmDel(null)}>Keep task</button>
+                  </div>
+                </div>
+              ) : (
+                <div className="so-row" style={{ marginTop: 22, justifyContent: "space-between" }}>
+                  <button className="so-btn" data-v="bad" onClick={() => setConfirmDel(editingTask.id)}>Delete</button>
+                  <button className="so-btn" onClick={() => setEditing(null)}>Done</button>
+                </div>
+              )}
             </div>
           </div>
         </div>
