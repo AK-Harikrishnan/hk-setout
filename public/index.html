@@ -326,8 +326,26 @@ function makeApi(cfg) {
   const root = "/api/airtable/";
   const headers = { "X-Setout-Key": cfg.key, "Content-Type": "application/json" };
 
-  const call = async (url, opts) => {
-    const r = await fetch(url, Object.assign({ headers }, opts || {}));
+  // Airtable allows about 5 requests per second per base, and answers 429 past that.
+  // Every request goes through one lane, spaced out, so quick taps or a refresh
+  // can never burst over the limit. A 429 is retried after a pause, not shown.
+  const sleep = (ms) => new Promise((res) => setTimeout(res, ms));
+  const GAP_MS = 250;
+  const RETRY_MS = [2000, 30000];
+  let lane = Promise.resolve();
+  const queued = (fn) => {
+    const p = lane.then(fn);
+    lane = p.catch(() => {}).then(() => sleep(GAP_MS));
+    return p;
+  };
+
+  const call = (url, opts) => queued(async () => {
+    let r;
+    for (let i = 0; ; i++) {
+      r = await fetch(url, Object.assign({ headers }, opts || {}));
+      if (r.status !== 429 || i >= RETRY_MS.length) break;
+      await sleep(RETRY_MS[i]);
+    }
     if (!r.ok) {
       let msg = "HTTP " + r.status;
       try { const j = await r.json(); if (j && j.error) msg = j.error.message || j.error.type || msg; } catch (e) {}
@@ -337,7 +355,7 @@ function makeApi(cfg) {
       throw new Error(msg);
     }
     return r.json();
-  };
+  });
 
   return {
     listAll: async (table) => {
